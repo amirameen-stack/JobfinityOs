@@ -177,9 +177,6 @@ export default function AddLeadModal({ open, onClose, onAdd }: Props) {
             <Field label="State / Region" name="state" value={form.state} onChange={handleChange} placeholder="New York" />
             <Field label="Country" name="country" value={form.country} onChange={handleChange} placeholder="United States" full />
           </Section>
-
-          
-
         </div>
 
         {/* Footer */}

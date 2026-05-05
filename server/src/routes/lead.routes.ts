@@ -11,6 +11,7 @@ router.post("/",LeadController.create);
 router.patch("/:id",LeadController.update);
 router.patch("/:id/status",LeadController.updateStatus); // dedicated status endpoint
 router.patch("/:id/folder", LeadController.assignFolder);
+router.post("/:id/enrich", LeadController.enrich);
 router.delete("/:id",LeadController.delete);
 
 

@@ -1,8 +1,8 @@
 import { Search, Bell, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import SearchModal from './modals/SearchModal'
-import { useAuth } from '../context/useAuth'
+import SearchModal from '@/components/modals/SearchModal'
+import { useAuth } from '@/context/useAuth'
 import toast from 'react-hot-toast'
 
 const Navbar = () => {

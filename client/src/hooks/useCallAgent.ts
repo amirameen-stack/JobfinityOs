@@ -1,6 +1,6 @@
 // src/hooks/useCallAgent.ts
 import { useEffect, useRef, useState, useCallback } from "react";
-import { api } from "../api/axios";
+import { api } from "@/api/axios";
 
 export interface TranscriptEntry {
   role: "agent" | "prospect";
@@ -18,7 +18,7 @@ export interface ActiveCall {
 }
 
 interface WsMessage {
-  type: "CALL_STARTED" | "CALL_STATUS" | "TRANSCRIPT_UPDATE";
+  type: "CALL_STARTED" | "CALL_STATUS" | "TRANSCRIPT_UPDATE" | "SCHEDULED_CALL_FIRED";
   twilio_sid?: string;
   call_id?: string;
   lead_id?: string;
@@ -46,11 +46,12 @@ export const useCallAgent = () => {
   const handleMessage = useCallback((msg: WsMessage) => {
     switch (msg.type) {
       case "CALL_STARTED":
+      case "SCHEDULED_CALL_FIRED":
         setActiveCall({
-          call_id:    msg.call_id!,
+          call_id:    msg.call_id ?? "", // scheduler might not have internal call_id yet
           twilio_sid: msg.twilio_sid!,
           lead_id:    msg.lead_id!,
-          to_number:  msg.to_number!,
+          to_number:  msg.to_number ?? "",
           status:     "initiated",
           duration:   null,
         });
@@ -146,6 +147,18 @@ export const useCallAgent = () => {
     }
   }, []);
 
+  const startAutoCalls = useCallback(async () => {
+    setIsStarting(true);
+    setError(null);
+    try {
+      await api.post("/calls/auto-start");
+    } catch (err: any) {
+      setError(err.response?.data?.message ?? "Failed to start auto calls");
+    } finally {
+      setIsStarting(false);
+    }
+  }, []);
+
   const endCall = useCallback(async () => {
     if (!activeCall?.twilio_sid) return;
     try {
@@ -162,6 +175,7 @@ export const useCallAgent = () => {
     isStarting,
     error,
     startCall,
+    startAutoCalls,
     endCall,
   };
 };

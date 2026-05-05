@@ -4,7 +4,8 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import app, { initStorage } from "./app";
 import { env } from "./config/env";
-import { setWss } from "./controllers/call.controller";
+import { setWss } from "./lib/websocket";
+import { startCallScheduler } from "./services/callScheduler";
 
 
 const PORT = parseInt(env.PORT, 10);
@@ -13,11 +14,14 @@ const PORT = parseInt(env.PORT, 10);
 // This lets WebSocket and HTTP share the same port
 const httpServer = http.createServer(app);
 
+
 // ── attach WebSocket server to the same http server ───────────────────────────
 const wss = new WebSocketServer({
   server: httpServer,
   path: "/ws",              // React connects to ws://host/ws
 });
+
+startCallScheduler(wss);
 
 wss.on("connection", (socket, req) => {
   console.log("[ws] client connected:", req.socket.remoteAddress);

@@ -1,13 +1,10 @@
 import './App.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import KabanBoardPage from './pages/components/ui/KanbanBoard.tsx'
-import Layout from './components/Layout.tsx'
-import { ProtectedRoute } from './components/ProtectedRoute.tsx'
-
-// import AgentMonitorPage from './pages/components/ui/AgentMonitor.tsx';
-import LoginPage from './pages/Login.tsx';
-import RegisterPage from './pages/Register.tsx';
-// import { DocumentsModal } from './pages/components/ui/DocumentsModal.tsx';
+import KanbanBoardPage from '@/features/kanban/KanbanBoard'
+import Layout from '@/layouts/Layout'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import LoginPage from '@/pages/Login'
+import RegisterPage from '@/pages/Register'
 
   const router = createBrowserRouter([
     {
@@ -17,7 +14,7 @@ import RegisterPage from './pages/Register.tsx';
           path: "/",
           element: <Layout />,
           children: [
-            {index: true, element: <KabanBoardPage /> },
+            {index: true, element: <KanbanBoardPage /> },
             // { path: "documents", element: <DocumentsModal /> },
             // { path: "agent", element: <AgentMonitorPage /> },
           ],

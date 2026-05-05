@@ -2,14 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { UserModel } from "../models/user.model";
 import { AuthRequest } from "../types";
 import { AppError } from "../middleware/error.middleware";
-import { env } from "../config/env";
-
-const isProduction = env.NODE_ENV === "production";
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: isProduction,
-  sameSite: (isProduction ? "strict" : "lax") as "strict" | "lax",
+  secure: true,
+  sameSite: "none" as const,
   path: "/",
 };
 
@@ -46,7 +43,6 @@ export const AuthController = {
         ...COOKIE_OPTIONS,
         maxAge: 60 * 60 * 1000, // 1 hour
       });
-
       res.cookie("refresh_token", data.session?.refresh_token, {
         ...COOKIE_OPTIONS,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days

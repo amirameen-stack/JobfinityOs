@@ -1,11 +1,12 @@
 // KanbanBoard.tsx
 import { useState, useEffect, useRef } from "react";
-import AddLeadModal from "../../../components/modals/AddLeadModal";
-import FolderManagerModal from "../../../components/modals/FolderManagerModal";
-import { useWindowManager } from "../../../context/WindowManagerContext";
-import { api } from "../../../api/axios";
-import { leadService } from "../../../services/leadService";
-import type { Lead } from "../../../services/leadService";
+import AddLeadModal from "@/components/modals/AddLeadModal";
+import FolderManagerModal from "@/components/modals/FolderManagerModal";
+import CompanyDetailPanel from "@/features/company/CompanyDetailPanel";
+import { useWindowManager } from "@/context/WindowManagerContext";
+import { api } from "@/api/axios";
+import { leadService } from "@/services/leadService";
+import type { Lead } from "@/services/leadService";
 import {
   DndContext,
   PointerSensor,
@@ -35,6 +36,14 @@ import {
   FileText,
 } from "lucide-react";
 import { Rnd } from "react-rnd";
+
+// ─── WINDOW EXTENSION ─────────────────────────────────
+
+declare global {
+  interface Window {
+    openFolderManager?: () => void;
+  }
+}
 
 // ─── TYPES ─────────────────────────────────────────────
 
@@ -136,7 +145,11 @@ function FolderAssignmentPopup({
       <div className="px-4 pt-3 pb-2 flex justify-between items-center">
         <p className="text-[10px] font-semibold text-[#3a5a7a] uppercase tracking-widest">Move to folder</p>
         <button
-          onClick={(e) => { e.stopPropagation(); (window as any).openFolderManager?.(); onClose(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.openFolderManager?.();
+            onClose();
+          }}
           className="p-1 rounded-full text-[10px] font-bold text-blue-400/80 hover:bg-blue-500/10 hover:text-blue-400 transition-all uppercase tracking-wider"
         >
           <Plus size={12} />
@@ -179,7 +192,6 @@ function FolderAssignmentPopup({
             </button>
           );
         })}
-        
       </div>
     </div>
   );
@@ -187,11 +199,18 @@ function FolderAssignmentPopup({
 
 // ─── CARD ─────────────────────────────────────────────
 
-function Card({ item, folders, onAssignFolder, toggleDocs }: { 
-  item: CardItem; 
+function Card({
+  item,
+  folders,
+  onAssignFolder,
+  toggleDocs,
+  onSelect,
+}: {
+  item: CardItem;
   folders: FolderType[];
   onAssignFolder: (leadId: string, folderId: string | null) => void;
   toggleDocs: (leadId: string) => void;
+  onSelect: (item: CardItem) => void;
 }) {
   const {
     setNodeRef,
@@ -201,7 +220,7 @@ function Card({ item, folders, onAssignFolder, toggleDocs }: {
     transition,
     isDragging,
   } = useSortable({ id: item.id });
-  
+
   const [showPopup, setShowPopup] = useState(false);
 
   const dragAttributes = {
@@ -213,7 +232,7 @@ function Card({ item, folders, onAssignFolder, toggleDocs }: {
   const dragListeners = {
     onPointerDown: (e: React.PointerEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.folder-selector') && !target.closest('.folder-popup')) {
+      if (!target.closest(".folder-selector") && !target.closest(".folder-popup")) {
         listeners?.onPointerDown?.(e);
       }
     },
@@ -228,6 +247,7 @@ function Card({ item, folders, onAssignFolder, toggleDocs }: {
       style={{ transform: CSS.Transform.toString(transform), transition }}
       {...dragAttributes}
       {...dragListeners}
+      onClick={() => onSelect(item)}
       className={`flex flex-col w-full rounded-2xl gap-3 p-4 border cursor-grab active:cursor-grabbing relative transition-all ${
         isDragging
           ? "opacity-40 scale-95 border-[#1E6FD9]/40 bg-[#0c1928]"
@@ -268,7 +288,10 @@ function Card({ item, folders, onAssignFolder, toggleDocs }: {
                 leadId={item.id}
                 currentFolderId={item.folder_id || null}
                 folders={folders}
-                onAssign={(leadId, folderId) => { onAssignFolder(leadId, folderId); setShowPopup(false); }}
+                onAssign={(leadId, folderId) => {
+                  onAssignFolder(leadId, folderId);
+                  setShowPopup(false);
+                }}
                 onClose={() => setShowPopup(false)}
               />
             </div>
@@ -301,7 +324,7 @@ function Card({ item, folders, onAssignFolder, toggleDocs }: {
         </div>
 
         {/* File count indicator */}
-        <div 
+        <div
           onClick={(e) => { e.stopPropagation(); toggleDocs(item.id); }}
           className="flex items-center gap-1 text-[10px] font-semibold text-[#4a6a8a] hover:text-[#60a5fa] cursor-pointer transition-colors group"
         >
@@ -362,12 +385,15 @@ export default function KanbanBoard() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [folders, setFolders] = useState<FolderType[]>([]);
 
   useEffect(() => {
-    (window as any).openFolderManager = () => setIsFolderModalOpen(true);
-    return () => { delete (window as any).openFolderManager; };
+    window.openFolderManager = () => setIsFolderModalOpen(true);
+    return () => {
+      delete window.openFolderManager;
+    };
   }, []);
 
   const [board, setBoard] = useState<BoardData>({
@@ -422,7 +448,7 @@ export default function KanbanBoard() {
       });
       return next;
     });
-    fetchLeads();
+    void fetchLeads();
   }
 
   // ── assign folder to lead ───────────────────────────
@@ -430,7 +456,7 @@ export default function KanbanBoard() {
   async function handleAssignFolder(leadId: string, folderId: string | null) {
     try {
       await leadService.assignFolder(leadId, folderId);
-      
+
       setBoard((prev) => {
         const next = structuredClone(prev);
         for (const colKey of Object.keys(next) as ColumnKey[]) {
@@ -485,7 +511,7 @@ export default function KanbanBoard() {
         fromItems.splice(
           toItemIdx === -1 ? fromItems.length : toItemIdx,
           0,
-          moved,
+          moved
         );
       } else {
         next[overColKey!].items.push(moved);
@@ -536,9 +562,12 @@ export default function KanbanBoard() {
     }
   }
 
+  // ── combined initial fetch ───────────────────────────
+
   useEffect(() => {
-    fetchLeads();
-    fetchFolders();
+    (async () => {
+      await Promise.all([fetchLeads(), fetchFolders()]);
+    })();
   }, []);
 
   // ─── RENDER ───────────────────────────────────────────
@@ -586,64 +615,64 @@ export default function KanbanBoard() {
                 onClick={() => setOpenModal(true)}
                 className="cursor-pointer hover:text-[#1E6FD9] transition-colors text-[#7a9ab5]"
               />
-              <button onClick={() => setIsFullScreen(!isFullScreen)} className="text-[#7a9ab5] hover:text-white transition-colors">
-                {isFullScreen ? (
-                  <Minimize2 size={16} />
-                ) : (
-                  <Maximize2 size={16} />
-                )}
+              <button
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                className="text-[#7a9ab5] hover:text-white transition-colors"
+              >
+                {isFullScreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
             </div>
           </header>
 
           {/* BOARD */}
           <main className="flex gap-4 p-4 overflow-x-auto flex-1 custom-scroll">
-            {(Object.entries(board) as [ColumnKey, Column][]).map(
-              ([key, col]) => (
-                <div
-                  key={key}
-                  className="flex flex-col gap-3 flex-1 min-w-70 max-w-[320px]"
-                >
-                  {/* COLUMN HEADER */}
-                  <div className="flex items-center gap-2 px-1">
-                    <span className={`${col.dotColor} w-2 h-2 rounded-full shadow-lg`} />
-                    <span className="text-xs font-semibold text-[#7a9ab5] uppercase tracking-wide">{col.label}</span>
-                    <span className={`${col.badgeBg} ${col.badgeText} text-xs px-1.5 py-0.5 rounded-full ml-auto font-medium`}>
-                      {isLoading ? "—" : totalItems(col)}
-                    </span>
-                  </div>
-
-                  {/* COLUMN BODY */}
-                  <SortableContext
-                    items={col.items.map((i) => i.id)}
-                    strategy={verticalListSortingStrategy}
+            {(Object.entries(board) as [ColumnKey, Column][]).map(([key, col]) => (
+              <div
+                key={key}
+                className="flex flex-col gap-3 flex-1 min-w-70 max-w-[320px]"
+              >
+                {/* COLUMN HEADER */}
+                <div className="flex items-center gap-2 px-1">
+                  <span className={`${col.dotColor} w-2 h-2 rounded-full shadow-lg`} />
+                  <span className="text-xs font-semibold text-[#7a9ab5] uppercase tracking-wide">
+                    {col.label}
+                  </span>
+                  <span
+                    className={`${col.badgeBg} ${col.badgeText} text-xs px-1.5 py-0.5 rounded-full ml-auto font-medium`}
                   >
-                    <ColumnContainer id={key}>
-                      {isLoading ? (
-                        Array.from({ length: 2 }).map((_, i) => (
-                          <SkeletonCard key={i} />
-                        ))
-                      ) : col.items.length === 0 ? (
-                        <div className="flex flex-col w-full rounded-2xl gap-2 p-6 border border-dashed border-[#1a3150] bg-[#0d1e30]/50 text-center">
-                          <p className="text-xs text-[#2a4560]">No leads yet</p>
-                          <p className="text-[10px] text-[#1e3450]">Drag or add new leads</p>
-                        </div>
-                      ) : (
-                        col.items.map((item) => (
-                          <Card 
-                            key={item.id} 
-                            item={item} 
-                            folders={folders}
-                            onAssignFolder={handleAssignFolder}
-                            toggleDocs={toggleDocs}
-                          />
-                        ))
-                      )}
-                    </ColumnContainer>
-                  </SortableContext>
+                    {isLoading ? "—" : totalItems(col)}
+                  </span>
                 </div>
-              ),
-            )}
+
+                {/* COLUMN BODY */}
+                <SortableContext
+                  items={col.items.map((i) => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ColumnContainer id={key}>
+                    {isLoading ? (
+                      Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
+                    ) : col.items.length === 0 ? (
+                      <div className="flex flex-col w-full rounded-2xl gap-2 p-6 border border-dashed border-[#1a3150] bg-[#0d1e30]/50 text-center">
+                        <p className="text-xs text-[#2a4560]">No leads yet</p>
+                        <p className="text-[10px] text-[#1e3450]">Drag or add new leads</p>
+                      </div>
+                    ) : (
+                      col.items.map((item) => (
+                        <Card
+                          key={item.id}
+                          item={item}
+                          folders={folders}
+                          onAssignFolder={handleAssignFolder}
+                          toggleDocs={toggleDocs}
+                          onSelect={setSelectedLead}
+                        />
+                      ))
+                    )}
+                  </ColumnContainer>
+                </SortableContext>
+              </div>
+            ))}
           </main>
         </div>
       </Rnd>
@@ -653,13 +682,17 @@ export default function KanbanBoard() {
         onClose={() => setOpenModal(false)}
         onAdd={handleAddLead}
       />
-      <FolderManagerModal 
+      <FolderManagerModal
         open={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
         onFoldersChange={() => {
-          fetchLeads();
-          fetchFolders();
+          void fetchLeads();
+          void fetchFolders();
         }}
+      />
+      <CompanyDetailPanel
+        lead={selectedLead}
+        onClose={() => setSelectedLead(null)}
       />
     </DndContext>
   );

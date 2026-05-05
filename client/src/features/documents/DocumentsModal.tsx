@@ -3,9 +3,9 @@
 import { FileText, Folder, Maximize2, Minimize2, Upload, Loader2, X, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Rnd } from "react-rnd";
-import { useWindowManager } from "../../../context/WindowManagerContext";
-import { leadService } from "../../../services/leadService";
-import { api } from "../../../api/axios";
+import { useWindowManager } from "@/context/WindowManagerContext";
+import { leadService } from "@/services/leadService";
+import { api } from "@/api/axios";
 import toast from "react-hot-toast";
 
 interface LeadFolder {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { SquareTerminal, ArrowRight } from "lucide-react";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "@/context/useAuth";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 

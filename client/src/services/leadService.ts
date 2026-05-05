@@ -1,4 +1,4 @@
-import { api } from "../api/axios";
+import { api } from "@/api/axios";
 
 export interface Lead {
   id: string;
@@ -72,5 +72,10 @@ export const leadService = {
 
   async delete(id: string): Promise<void> {
     await api.delete(`/leads/${id}`);
+  },
+
+  async enrichLead(id: string, company_name: string): Promise<any> {
+    const res = await api.post(`/leads/${id}/enrich`, { company_name });
+    return res.data.data;
   },
 };

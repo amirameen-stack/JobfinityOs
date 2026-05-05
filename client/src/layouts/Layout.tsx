@@ -1,9 +1,9 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "@/layouts/Navbar";
+import Footer from "@/layouts/Footer";
 import { Outlet } from "react-router-dom";
-import { WindowManagerProvider } from "../context/WindowManagerProvider";
-import { DocumentsModal } from "../pages/components/ui/DocumentsModal";
-import AgentMoniter from "../pages/components/ui/AgentMonitor";
+import { WindowManagerProvider } from "@/context/WindowManagerProvider";
+import { DocumentsModal } from "@/features/documents/DocumentsModal";
+import AgentMoniter from "@/features/agent/AgentMonitor";
 
 const Layout = () => {
   return (

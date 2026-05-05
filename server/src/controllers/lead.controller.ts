@@ -1,5 +1,6 @@
 import { Response, NextFunction } from "express";
 import { LeadModel } from "../models/lead.model";
+import { AiService } from "../services/ai.service";
 import { AuthRequest } from "../types";
 import { AppError } from "../middleware/error.middleware";
 
@@ -75,6 +76,24 @@ async assignFolder(req: AuthRequest, res: Response, next: NextFunction) {
 
     const data = await LeadModel.assignFolder(id, req.user!.id, folder_id ?? null);
     res.status(200).json({ success: true, message: "Folder assigned", data });
+  } catch (err) { next(err); }
+},
+
+async enrich(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    if (!id || Array.isArray(id)) throw new AppError(400, "Invalid ID");
+
+    // We need to fetch the lead to get its company_name
+    // LeadModel doesn't have a getLeadById, we can use getLeads and filter, or just run a query
+    // Actually, we can just use the provided companyName from query or body instead to save a DB call, 
+    // or just fetch all leads and find. For now let's assume body contains company_name.
+    // Let's modify so it takes company_name from body
+    const { company_name } = req.body;
+    if (!company_name) throw new AppError(400, "company_name is required");
+
+    const data = await AiService.fetchCompanyDetails(company_name);
+    res.status(200).json({ success: true, data });
   } catch (err) { next(err); }
 },
 };

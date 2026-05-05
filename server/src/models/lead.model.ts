@@ -115,5 +115,58 @@ export const LeadModel = {
     if (error) throw new AppError(400, error.message);
   },
 
+  // add inside LeadModel object
+async getLeadsForAutoCall(userId: string, limit: number) {
+  const todayUK = new Date().toLocaleDateString("en-GB", { timeZone: "Europe/London" });
+  
+  const { data, error } = await supabaseAdmin
+    .from("leads")
+    .select("*")
+    .eq("user_id", userId)
+    .in("status", ["newLeads", "potential"])
+    .eq("auto_call_excluded", false)
+    .lt("call_attempts", 3)
+    .or(`last_called_at.is.null,last_called_at.lt.${new Date(todayUK).toISOString()}`)
+    .order("status", { ascending: true })   // newLeads first
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  if (error) throw new AppError(500, error.message);
+  return data ?? [];
+},
+
+async incrementCallAttempt(id: string) {
+  const { error } = await supabaseAdmin
+    .from("leads")
+    .update({
+      call_attempts: supabase.rpc("increment", { row_id: id }),
+      last_called_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) throw new AppError(400, error.message);
+},
+
+async markAsContacted(id: string) {
+  const { error } = await supabaseAdmin
+    .from("leads")
+    .update({
+      status: "contacted",
+      auto_call_excluded: true,
+      last_called_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) throw new AppError(400, error.message);
+},
+
+async excludeFromAutoCalls(id: string) {
+  const { error } = await supabaseAdmin
+    .from("leads")
+    .update({ auto_call_excluded: true })
+    .eq("id", id);
+
+  if (error) throw new AppError(400, error.message);
+},
 
 };

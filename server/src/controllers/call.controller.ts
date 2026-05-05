@@ -1,44 +1,19 @@
 // src/controllers/call.controller.ts
 import { Request, Response, NextFunction } from "express";
 import twilio from "twilio";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { twilioClient } from "../lib/twilio";
+import { getGeminiModel } from "../lib/gemini";
+import { broadcast } from "../lib/websocket";
 import { CallModel } from "../models/call.model";
 import { AppError } from "../middleware/error.middleware";
 import { env } from "../config/env";
-import { WebSocketServer } from "ws";
-
-const twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
-const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-
-// shared WebSocket server instance — set from server.ts after httpServer is created
-let wss: WebSocketServer | null = null;
-export const setWss = (instance: WebSocketServer) => { wss = instance; };
-
-// broadcast transcript update to all connected React clients
-const broadcast = (payload: object) => {
-  if (!wss) return;
-  const msg = JSON.stringify(payload);
-  wss.clients.forEach(client => {
-    if (client.readyState === 1) client.send(msg);
-  });
-};
+import { handleCallCompletion, runDailyCallsForUser } from "../services/callScheduler";
+// import { SALES_SCRIPT } from "../services/callScript"; 
+const SALES_SCRIPT = "You are a sales agent..."; // Placeholder
+import { supabaseAdmin } from "../config/supabase";
 
 // system prompt that shapes the AI agent's personality and goal
-const AGENT_SYSTEM_PROMPT = `
-You are Sarah, a professional sales agent for Jobfinity, an AI-powered recruitment platform.
-Your goal is to qualify leads and book a demo call.
-
-Rules:
-- Keep responses under 3 sentences — this is a phone call, not an email
-- Be warm, confident and consultative, never pushy
-- Ask one question at a time
-- If the prospect is not interested, thank them and end politely
-- If they want a demo, confirm their email and say the team will be in touch within 24 hours
-- Never make up pricing or features you are unsure about
-
-Start by greeting the prospect and asking if they have 2 minutes to hear about how Jobfinity 
-can cut their hiring time by 60%.
-`.trim();
+const AGENT_SYSTEM_PROMPT = SALES_SCRIPT;
 
 // ─────────────────────────────────────────────
 // POST /api/calls/start
@@ -83,6 +58,23 @@ export const startCall = async (req: Request, res: Response, next: NextFunction)
     });
 
     res.status(201).json({ success: true, call });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/calls/auto-start
+// ─────────────────────────────────────────────
+export const startAutoCalls = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new AppError(401, "Unauthorized");
+
+    // Don't await because it runs slowly and staggers
+    runDailyCallsForUser(userId).catch(console.error);
+
+    res.json({ success: true, message: "Auto calls started" });
   } catch (err) {
     next(err);
   }
@@ -221,28 +213,49 @@ export const callStatus = async (req: Request, res: Response, next: NextFunction
       CallDuration, // duration in seconds, only present when status = completed
     } = req.body;
 
-    const validStatuses = ["initiated", "ringing", "in-progress", "completed", "failed", "busy", "no-answer"];
+    const validStatuses = ["initiated", "ringing", "in-progress", "completed", "failed", "busy", "no-answer", "canceled"];
     if (!validStatuses.includes(CallStatus)) {
       res.sendStatus(200);
       return;
     }
 
-    await CallModel.updateCall(CallSid, {
-      status: CallStatus,
-      ...(CallDuration ? { duration: parseInt(CallDuration, 10) } : {}),
-    });
+  await CallModel.updateCall(CallSid, {
+  status: CallStatus,
+  ...(CallDuration ? { duration: parseInt(CallDuration, 10) } : {}),
+});
 
-    broadcast({
-      type: "CALL_STATUS",
-      twilio_sid: CallSid,
-      status: CallStatus,
-      duration: CallDuration ? parseInt(CallDuration, 10) : null,
-    });
+broadcast({
+  type: "CALL_STATUS",
+  twilio_sid: CallSid,
+  status: CallStatus,
+  duration: CallDuration ? parseInt(CallDuration, 10) : null,
+});
 
-    res.sendStatus(200);
+// trigger outcome detection and lead status update when call ends
+if (CallStatus === "completed" || CallStatus === "no-answer" || CallStatus === "busy" || CallStatus === "failed" || CallStatus === "canceled") {
+  await handleCallCompletion(CallSid, CallStatus);
+}
+
+res.sendStatus(200);
   } catch (err) {
     // always 200 to Twilio — otherwise it retries the webhook repeatedly
     res.sendStatus(200);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/calls/:twilio_sid/end
+// ─────────────────────────────────────────────
+export const endCall = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { twilio_sid } = req.params;
+    if (!twilio_sid) throw new AppError(400, "twilio_sid is required");
+
+    await twilioClient.calls(twilio_sid as string).update({ status: "completed" });
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -264,10 +277,7 @@ const getGeminiReply = async (
     parts: [{ text: entry.text }],
   }));
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: AGENT_SYSTEM_PROMPT,
-  });
+  const model = getGeminiModel("gemini-1.5-flash", AGENT_SYSTEM_PROMPT);
 
   const chat = model.startChat({ history });
 
@@ -285,14 +295,52 @@ const getGeminiReply = async (
 const detectCallEnd = (reply: string): boolean => {
   const endPhrases = [
     "have a great day",
-    "take care",
-    "goodbye",
-    "talk soon",
-    "we'll be in touch",
-    "team will contact you",
-    "thank you for your time",
-    "not a good fit",
+    "have a wonderful day",
+    "calendar invite within 24 hours",
+    "looking forward to showing",
+    "leave it with you",
+    "feel free to reach out",
+    "removed right away",
+    "sorry for the interruption",
+    "try you then",
+    "reconnect closer to that time",
+    "won't take up any more of your time",
   ];
   const lower = reply.toLowerCase();
   return endPhrases.some(phrase => lower.includes(phrase));
+};
+
+export const getTodaysCalls = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) throw new AppError(401, "Unauthorized");
+
+    const startOfDayUK = new Date();
+    startOfDayUK.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabaseAdmin
+      .from("calls")
+      .select("*, leads(company_name, contact_name, phone)")
+      .eq("user_id", userId)
+      .gte("created_at", startOfDayUK.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (error) throw new AppError(500, error.message);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+export const getAllCalls = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new AppError(401, "Unauthorized");
+
+    const { data, error } = await supabaseAdmin
+      .from("calls")
+      .select("*, leads(company_name, contact_name, phone)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new AppError(500, error.message);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
 };

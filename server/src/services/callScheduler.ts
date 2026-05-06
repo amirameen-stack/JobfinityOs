@@ -1,4 +1,3 @@
-// src/services/callScheduler.ts
 import cron from "node-cron";
 import twilio from "twilio";
 import { supabaseAdmin } from "../config/supabase";
@@ -35,7 +34,7 @@ async function getActiveUserIds(): Promise<string[]> {
 
 // ── fire calls for a single user ──────────────────────────────────────────────
 export async function runDailyCallsForUser(userId: string) {
-  const limit = parseInt(env.DAILY_CALL_LIMIT, 10);
+  const limit = parseInt(env.DAILY_CALL_LIMIT || "35", 10);
   const leads = await LeadModel.getLeadsForAutoCall(userId, limit);
 
   if (leads.length === 0) {
@@ -49,7 +48,7 @@ export async function runDailyCallsForUser(userId: string) {
     type: "SCHEDULER_STARTED",
     user_id: userId,
     total: leads.length,
-    time: new Date().toLocaleString("en-GB", { timeZone: "Europe/manchester" }),
+    time: new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }),
   });
 
   // stagger calls 30s apart to avoid Twilio rate limits
@@ -110,7 +109,7 @@ export async function handleCallCompletion(twilioSid: string, status?: string) {
     // If Twilio reported a failure, use that as the outcome directly
     let outcome = "completed";
     if (status === "no-answer" || status === "busy" || status === "failed" || status === "canceled") {
-      outcome = status === "canceled" ? "no-answer" : status;
+      outcome = "no-answer";
     } else {
       outcome = detectOutcome(call.transcript ?? []);
     }
@@ -147,15 +146,10 @@ export async function handleCallCompletion(twilioSid: string, status?: string) {
 export function startCallScheduler(wssInstance: WebSocketServer) {
   setSchedulerWss(wssInstance);
 
-  // 9:00 AM UK time — cron runs in server local time
-  // We use UTC 09:00 in winter (GMT) and UTC 08:00 in summer (BST)
-  // node-cron doesn't natively support timezones so we calculate the offset
-
-  const scheduleTime = getUKCronTime(9, 0); // 9:00 AM UK
-
-  cron.schedule(scheduleTime, async () => {
-    // const nowUK = new Date().toLocaleString("en-GB", { timeZone: "Europe/London" });
-    // console.log(`[scheduler] Daily call run starting — UK time: ${nowUK}`);
+  // 9:00 AM UK time
+  cron.schedule("55 10 * * *", async () => {
+    const nowUK = new Date().toLocaleString("en-GB", { timeZone: "Europe/London" });
+    console.log(`[scheduler] Daily call run starting — UK time: ${nowUK}`);
 
     try {
       const userIds = await getActiveUserIds();
@@ -167,21 +161,10 @@ export function startCallScheduler(wssInstance: WebSocketServer) {
     } catch (err: any) {
       console.error("[scheduler] Cron job error:", err.message);
     }
+  }, {
+    timezone: "Europe/London"
   });
 
-//   console.log(`[scheduler] Daily calls scheduled at 9:00 AM UK time (cron: ${scheduleTime})`);
+  console.log(`[scheduler] Daily calls scheduled at 9:00 AM UK time`);
 }
 
-// ── calculate correct UTC cron expression for UK local time ──────────────────
-function getUKCronTime(hour: number, minute: number): string {
-  // UK is UTC+0 in winter (GMT), UTC+1 in summer (BST)
-  // We check if BST is currently active
-  const now = new Date();
-  const jan = new Date(now.getFullYear(), 0, 1);
-  const jul = new Date(now.getFullYear(), 6, 1);
-  const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-  const isBST = now.getTimezoneOffset() < stdOffset;
-
-  const utcHour = isBST ? hour - 1 : hour;
-  return `${minute} ${utcHour} * * *`;
-}

@@ -1,4 +1,3 @@
-// KanbanBoard.tsx
 import { useState, useEffect, useRef } from "react";
 import AddLeadModal from "@/components/modals/AddLeadModal";
 import FolderManagerModal from "@/components/modals/FolderManagerModal";

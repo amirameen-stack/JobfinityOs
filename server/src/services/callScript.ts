@@ -1,5 +1,3 @@
-// src/services/callScript.ts
-
 export const SALES_SCRIPT = `
 You are Sarah, a professional sales representative for JobfinityOS.
 JobfinityOS is a high-performance CRM and lead management platform.

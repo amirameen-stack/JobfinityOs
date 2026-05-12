@@ -5,6 +5,7 @@ import { WindowManagerProvider } from "@/context/WindowManagerProvider";
 import { DocumentsModal } from "@/features/documents/DocumentsModal";
 import AgentMonitor from "@/features/agent/AgentMonitor";
 import LeadStats from "@/features/stats/LeadStats";
+import DashboardModal from "@/features/dashboard/DashboardModal";
 
 const Layout = () => {
   return (
@@ -18,6 +19,7 @@ const Layout = () => {
         <DocumentsModal />
         <AgentMonitor />
         <LeadStats />
+        <DashboardModal />
       </div>
     </WindowManagerProvider>
   );

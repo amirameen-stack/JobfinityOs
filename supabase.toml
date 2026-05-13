@@ -1,0 +1,17 @@
+# Supabase Configuration File
+# This file tracks your Supabase project settings
+
+[project]
+# Your Supabase project reference ID
+project_id = ""
+
+# Your region (e.g., us-east-1, eu-west-1)
+region = ""
+
+[database]
+# PostgreSQL version
+version = "15"
+
+[api]
+# Max body size for file uploads (in MB)
+max_body_size = 50

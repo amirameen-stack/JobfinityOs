@@ -46,7 +46,7 @@ export const AuthController = {
       res.cookie("refresh_token", data.session?.refresh_token, {
         ...COOKIE_OPTIONS,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: "/api/auth/refresh",
+        path: "/",
       });
 
       res.status(200).json({
@@ -68,6 +68,14 @@ export const AuthController = {
         ...COOKIE_OPTIONS,
         maxAge: 60 * 60 * 1000,
       });
+
+      if (data.session?.refresh_token) {
+        res.cookie("refresh_token", data.session.refresh_token, {
+          ...COOKIE_OPTIONS,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          path: "/",
+        });
+      }
 
       res.status(200).json({ success: true, message: "Token refreshed" });
     } catch (err) { next(err); }

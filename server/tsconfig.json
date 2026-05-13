@@ -9,11 +9,9 @@
     // See also https://aka.ms/tsconfig/module
     "target": "ES6",
     "module": "commonjs",
-    "rootDir": "./src",
+    // "rootDir": "./src",
     "outDir": "./dist",
     "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],

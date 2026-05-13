@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   House, FolderOpen, CircleCheck, MessageSquareText,
-  ChartNoAxesCombined, Mail, Globe, Settings, CircleUser,
+  ChartNoAxesCombined, Mail, Globe, Settings, CircleUser, PieChart, LayoutDashboard,
 } from "lucide-react";
 import { useWindowManager } from "@/context/WindowManagerContext";
 
@@ -14,8 +14,12 @@ const Footer = () => {
   const {
     openDocs,
     openAgent,
+    openStats,
+    openDashboard,
     toggleDocs,
     toggleAgent,
+    toggleStats,
+    toggleDashboard,
     focusWindow,
   } = useWindowManager();
 
@@ -66,6 +70,19 @@ const Footer = () => {
         >
           <ChartNoAxesCombined size={22} />
         </button>
+        <button
+          onClick={() => toggleStats()}
+          className={openStats ? activeClass : inactiveClass}
+        >
+          <PieChart size={22} />
+        </button>
+        <button
+          onClick={() => toggleDashboard()}
+          className={openDashboard ? activeClass : inactiveClass}
+        >
+          <LayoutDashboard size={22} />
+        </button>
+
         <NavLink
           to="/analytics"
           className={({ isActive }) => (isActive ? activeClass : inactiveClass)}

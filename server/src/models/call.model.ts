@@ -1,4 +1,3 @@
-// src/models/call.model.ts
 import { supabase, supabaseAdmin } from "../config/supabase";
 import { AppError } from "../middleware/error.middleware";
 

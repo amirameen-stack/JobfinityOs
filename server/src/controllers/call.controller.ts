@@ -1,4 +1,3 @@
-// src/controllers/call.controller.ts
 import { Request, Response, NextFunction } from "express";
 import twilio from "twilio";
 import { twilioClient } from "../lib/twilio";

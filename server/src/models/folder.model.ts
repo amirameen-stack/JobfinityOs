@@ -1,4 +1,3 @@
-// src/models/folder.model.ts
 import { supabase } from "../config/supabase";
 import { AppError } from "../middleware/error.middleware";
 

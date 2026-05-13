@@ -1,4 +1,3 @@
-// src/controllers/folder.controller.ts
 import { Response, NextFunction } from "express";
 import { FolderModel } from "../models/folder.model";
 import { AuthRequest } from "../types";

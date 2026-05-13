@@ -1,4 +1,3 @@
-// src/routes/folder.routes.ts
 import { Router } from "express";
 import { FolderController } from "../controllers/folder.controller";
 import { requireAuth } from "../middleware/auth.middleware";

@@ -1,4 +1,3 @@
-// src/routes/call.routes.ts
 import { Router } from "express";
 import { startCall, handleWebhook, callStatus, getAllCalls, startAutoCalls, endCall } from "../controllers/call.controller";
 import { getTodaysCalls } from "../controllers/call.controller";

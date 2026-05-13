@@ -20,6 +20,10 @@ export const requireAuth = async (
     req.user = data.user;
     next();
   } catch (err) {
-    next(err);
+    if (err instanceof AppError) {
+      next(err);
+    } else {
+      next(new AppError(401, "Invalid or expired session"));
+    }
   }
 };

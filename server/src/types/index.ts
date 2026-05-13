@@ -13,12 +13,6 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message: string;
-  data?: T;
-  error?: string;
-}
 declare global {
   namespace Express {
     interface Request {

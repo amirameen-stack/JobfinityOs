@@ -110,7 +110,7 @@ function ProposalEditor({
       Image.configure({
         allowBase64: true,
         HTMLAttributes: {
-          class: 'max-w-40 h-10 rounded-lg my-1',
+          class: 'max-w-60 h-10 rounded-lg my-1',
         },
       }),
       Table.configure({
@@ -164,7 +164,7 @@ function ProposalEditor({
         .signature-table{width:100%;border-collapse:collapse;}
         .signature-cell{width:50%;vertical-align:top;padding:0 10px;}
         .signature-line{border-bottom:1px solid #333;height:40px;margin-bottom:8px;}
-        img{max-width:100%;height:auto;border-radius:8px;margin:16px 0;}
+        img{max-width:60%;height:40px;border-radius:8px;margin:16px 0;}
         a{color:#1E6FD9;text-decoration:underline;}
       </style>
       ${html}

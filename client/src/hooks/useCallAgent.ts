@@ -59,11 +59,12 @@ export const useCallAgent = () => {
         break;
 
       case "CALL_STATUS":
-        setActiveCall(prev =>
-          prev?.twilio_sid === msg.twilio_sid
-            ? { ...prev, status: msg.status!, duration: msg.duration ?? null }
-            : prev
-        );
+        setActiveCall(prev => {
+          if (prev && prev.twilio_sid === msg.twilio_sid) {
+            return { ...prev, status: msg.status!, duration: msg.duration ?? null };
+          }
+          return prev;
+        });
         if (msg.status === "completed" || msg.status === "failed") {
           setTimeout(() => {
             if (mountedRef.current) setActiveCall(null);

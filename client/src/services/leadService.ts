@@ -26,6 +26,11 @@ export const leadService = {
     return res.data.data;
   },
 
+  async getById(id: string): Promise<Lead> {
+    const res = await api.get(`/proposals/lead/${id}`);
+    return res.data.data;
+  },
+
   async create(data: Partial<Lead>): Promise<Lead> {
     const res = await api.post("/leads", data);
     return res.data.data;

@@ -11,7 +11,7 @@ import RegisterPage from '@/pages/Register'
       element: <ProtectedRoute />,
       children: [
         {
-          path: "/",
+          path: "/", 
           element: <Layout />,
           children: [
             {index: true, element: <KanbanBoardPage /> },

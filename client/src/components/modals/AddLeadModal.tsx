@@ -181,7 +181,7 @@ export default function AddLeadModal({ open, onClose, onAdd }: Props) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-white/8 flex items-center justify-between gap-3">
-          <span className="text-xs text-red-400 min-h-[1rem]">{error}</span>
+          <span className="text-xs text-red-400 min-h-4">{error}</span>
           <div className="flex gap-3">
             <button
               onClick={onClose}

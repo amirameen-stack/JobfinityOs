@@ -212,21 +212,21 @@ const AgentMoniter = () => {
       .finally(() => setLoadingLeads(false));
   }, []);
 
- useEffect(() => {
-  const run = async () => {
-    setLoadingLeads(true);
-    try {
-      const data = await leadService.getAll();
-      setLeads(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingLeads(false);
-    }
-  };
+  useEffect(() => {
+    const run = async () => {
+      setLoadingLeads(true);
+      try {
+        const data = await leadService.getAll();
+        setLeads(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingLeads(false);
+      }
+    };
 
-  run();
-}, []);
+    run();
+  }, []);
 
   const fetchCalls = useCallback(async () => {
     setLoadingCalls(true);
@@ -243,30 +243,30 @@ const AgentMoniter = () => {
     }
   }, [reportTab]);
 
-useEffect(() => {
-  if (activeTab !== "reports") return;
+  useEffect(() => {
+    if (activeTab !== "reports") return;
 
-  const run = async () => {
-    setLoadingCalls(true);
-    try {
-      const data =
-        reportTab === "today"
-          ? await schedulerService.getTodaysCalls()
-          : await schedulerService.getAllCalls();
+    const run = async () => {
+      setLoadingCalls(true);
+      try {
+        const data =
+          reportTab === "today"
+            ? await schedulerService.getTodaysCalls()
+            : await schedulerService.getAllCalls();
 
-      setCalls(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingCalls(false);
-    }
-  };
+        setCalls(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingCalls(false);
+      }
+    };
 
-  run();
-}, [activeTab, reportTab]);
+    run();
+  }, [activeTab, reportTab]);
 
   useEffect(() => {
-    const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:5000/ws";
+    const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:5001/ws";
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
@@ -315,9 +315,9 @@ useEffect(() => {
         size={
           isFullScreen
             ? {
-                width: window.innerWidth - 20,
-                height: window.innerHeight - 120,
-              }
+              width: window.innerWidth - 20,
+              height: window.innerHeight - 120,
+            }
             : undefined
         }
         position={isFullScreen ? { x: 10, y: 10 } : undefined}
@@ -363,21 +363,19 @@ useEffect(() => {
           <div className="flex bg-[#10213E] px-4 gap-4 border-b border-[#14407B]">
             <button
               onClick={() => setActiveTab("dialer")}
-              className={`py-2 px-1 text-xs font-semibold border-b-2 transition-colors ${
-                activeTab === "dialer"
+              className={`py-2 px-1 text-xs font-semibold border-b-2 transition-colors ${activeTab === "dialer"
                   ? "border-[#25C03C] text-white"
                   : "border-transparent text-[#8899AA] hover:text-white"
-              }`}
+                }`}
             >
               AUTO DIALER
             </button>
             <button
               onClick={() => setActiveTab("reports")}
-              className={`py-2 px-1 text-xs font-semibold border-b-2 transition-colors ${
-                activeTab === "reports"
+              className={`py-2 px-1 text-xs font-semibold border-b-2 transition-colors ${activeTab === "reports"
                   ? "border-[#25C03C] text-white"
                   : "border-transparent text-[#8899AA] hover:text-white"
-              }`}
+                }`}
             >
               CALL REPORTS
             </button>
@@ -534,11 +532,10 @@ useEffect(() => {
                     <button
                       key={t}
                       onClick={() => setReportTab(t)}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-colors ${
-                        reportTab === t
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-colors ${reportTab === t
                           ? "bg-[#1E6FD9] text-white"
                           : "text-[#3a5a7a] hover:bg-[#1E3050]"
-                      }`}
+                        }`}
                     >
                       {t === "today" ? "TODAY" : "HISTORY"}
                     </button>

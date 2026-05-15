@@ -507,6 +507,7 @@ function ProposalEditor({
                         return copy;
                       };
 
+                      if (!canvasRef.current) return;
                       const trimmedCanvas = trimCanvas(canvasRef.current);
                       const dataUrl = trimmedCanvas.toDataURL('image/png');
 

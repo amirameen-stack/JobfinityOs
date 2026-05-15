@@ -24,10 +24,7 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "10kb" }));
-
-// ── Twilio webhooks arrive as application/x-www-form-urlencoded ──────────────
-// This must be added — without it req.body is empty in handleWebhook
+app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false }));
 // ─────────────────────────────────────────────────────────────────────────────
 

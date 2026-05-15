@@ -94,7 +94,7 @@ export default function FolderManagerModal({
         }}
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-5 border-b border-white/8 bg-white/[0.02]">
+        <div className="flex justify-between items-center px-6 py-5 border-b border-white/8 bg-white/2">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
               <FolderOpen size={16} className="text-blue-400" />
@@ -127,36 +127,36 @@ export default function FolderManagerModal({
             <button
               onClick={handleCreate}
               disabled={isLoading || !newName.trim()}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center min-w-[50px]"
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center min-w-12.5"
             >
               {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
             </button>
           </div>
 
           {/* Folder list */}
-          <div className="flex flex-col gap-2 min-h-[150px] max-h-[300px] overflow-y-auto custom-scroll pr-1">
+          <div className="flex flex-col gap-2 min-h-37.5 max-h-75 overflow-y-auto custom-scroll pr-1">
             {isFetching ? (
               // Skeleton Loader
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 animate-pulse">
+                <div key={i} className="flex items-center gap-3 bg-white/3 border border-white/5 rounded-xl px-4 py-3 animate-pulse">
                   <div className="w-5 h-5 bg-white/10 rounded-md"></div>
                   <div className="flex-1 h-3 bg-white/10 rounded"></div>
                   <div className="w-5 h-5 bg-white/10 rounded"></div>
                 </div>
               ))
             ) : folders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 h-full text-center bg-white/[0.02] rounded-xl border border-white/5 border-dashed">
+              <div className="flex flex-col items-center justify-center py-10 h-full text-center bg-white/2 rounded-xl border border-white/5 border-dashed">
                 <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3">
                   <Folder size={20} className="text-blue-400" />
                 </div>
                 <p className="text-sm font-semibold text-white/80">No folders yet</p>
-                <p className="text-xs text-white/40 mt-1 max-w-[200px]">Create your first folder above to start organizing your leads.</p>
+                <p className="text-xs text-white/40 mt-1 max-w-50">Create your first folder above to start organizing your leads.</p>
               </div>
             ) : (
               folders.map((folder) => (
                 <div
                   key={folder.id}
-                  className="group flex items-center gap-3 bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-xl px-4 py-3 transition-all"
+                  className="group flex items-center gap-3 bg-white/3 hover:bg-white/5 border border-white/5 hover:border-white/10 rounded-xl px-4 py-3 transition-all"
                 >
                   <Folder size={16} className="text-blue-400 shrink-0" />
 

@@ -30,40 +30,41 @@ interface WsMessage {
   timestamp?: string;
 }
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:5000/ws";
+const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:5001/ws";
 
 export const useCallAgent = () => {
-  const [activeCall, setActiveCall]   = useState<ActiveCall | null>(null);
-  const [transcript, setTranscript]   = useState<TranscriptEntry[]>([]);
+  const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [isStarting, setIsStarting]   = useState(false);
-  const [error, setError]             = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const wsRef          = useRef<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef     = useRef(true);
+  const mountedRef = useRef(true);
 
   const handleMessage = useCallback((msg: WsMessage) => {
     switch (msg.type) {
       case "CALL_STARTED":
       case "SCHEDULED_CALL_FIRED":
         setActiveCall({
-          call_id:    msg.call_id ?? "", // scheduler might not have internal call_id yet
+          call_id: msg.call_id ?? "", // scheduler might not have internal call_id yet
           twilio_sid: msg.twilio_sid!,
-          lead_id:    msg.lead_id!,
-          to_number:  msg.to_number ?? "",
-          status:     "initiated",
-          duration:   null,
+          lead_id: msg.lead_id!,
+          to_number: msg.to_number ?? "",
+          status: "initiated",
+          duration: null,
         });
         setTranscript([]);
         break;
 
       case "CALL_STATUS":
-        setActiveCall(prev =>
-          prev?.twilio_sid === msg.twilio_sid
-            ? { ...prev, status: msg.status!, duration: msg.duration ?? null }
-            : prev
-        );
+        setActiveCall(prev => {
+          if (prev && prev.twilio_sid === msg.twilio_sid) {
+            return { ...prev, status: msg.status!, duration: msg.duration ?? null };
+          }
+          return prev;
+        });
         if (msg.status === "completed" || msg.status === "failed") {
           setTimeout(() => {
             if (mountedRef.current) setActiveCall(null);
@@ -76,8 +77,8 @@ export const useCallAgent = () => {
         setTranscript(prev => [
           ...prev,
           {
-            role:      msg.role!,
-            text:      msg.text!,
+            role: msg.role!,
+            text: msg.text!,
             timestamp: msg.timestamp ?? new Date().toISOString(),
           },
         ]);
@@ -137,7 +138,7 @@ export const useCallAgent = () => {
     setError(null);
     try {
       await api.post("/calls/start", {
-        lead_id:   leadId,
+        lead_id: leadId,
         to_number: toNumber,
       });
     } catch (err: any) {

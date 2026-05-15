@@ -9,7 +9,7 @@
     // See also https://aka.ms/tsconfig/module
     "target": "ES6",
     "module": "commonjs",
-    // "rootDir": "./src",
+    "rootDir": "./src",
     "outDir": "./dist",
     "esModuleInterop": true,
     // For nodejs:
